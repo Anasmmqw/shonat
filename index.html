@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>شنط رمضان جيوماتكس</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            direction: rtl; 
+            background-image: url('background.jpg'); /* استبدل بالصورة التي تريدها */
+            background-size: cover;
+            background-position: center;
+            color: white;
+        }
+        .container { 
+            max-width: 500px; 
+            margin: auto; 
+            padding: 20px; 
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 10px; 
+        }
+        .progress-bar { 
+            width: 100%; 
+            background: #ddd; 
+            border-radius: 20px; 
+            overflow: hidden; 
+        }
+        .progress { 
+            height: 30px; 
+            background: green; 
+            width: 0%; 
+            color: white; 
+            line-height: 30px; 
+        }
+        .copy-btn {
+            cursor: pointer;
+            background: #ffcc00;
+            border: none;
+            padding: 5px 10px;
+            margin: 5px;
+            border-radius: 5px;
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="title">شنط رمضان جيوماتكس</h1>
+        <p>رقم اتصلات كاش: <strong id="vodafone">01158159732</strong> 
+            <button class="copy-btn" onclick="copyText('vodafone')">📋 نسخ</button></p>
+        <p>رقم إنستا باي: <strong id="instapay">01122372630</strong> 
+            <button class="copy-btn" onclick="copyText('instapay')">📋 نسخ</button></p>
+        <h2>المبلغ المُجمع: <span id="amount">0</span> جنيه</h2>
+        <div class="progress-bar">
+            <div class="progress" id="progress-bar">0%</div>
+        </div>
+        <div id="bgPanel" class="hidden">
+            <input type="text" id="bgUrl" placeholder="أدخل رابط الصورة">
+            <button onclick="updateBackground()">تحديث الخلفية</button>
+        </div>
+        <div id="adminPanel" class="hidden">
+            <input type="number" id="manualAmount" placeholder="أدخل المبلغ الجديد">
+            <button onclick="updateAmount()">تحديث البيانات</button>
+        </div>
+    </div>
+
+    <script>
+        function copyText(elementId) {
+            let text = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(text);
+            alert('تم النسخ: ' + text);
+        }
+
+        function updateAmount() {
+            let amount = document.getElementById('manualAmount').value;
+            document.getElementById('amount').innerText = amount;
+            let percentage = (amount / 10000) * 100; // استبدل 10000 بالهدف الكلي
+            document.getElementById('progress-bar').style.width = percentage + '%';
+            document.getElementById('progress-bar').innerText = Math.round(percentage) + '%';
+        }
+
+        function updateBackground() {
+            let bgUrl = document.getElementById('bgUrl').value;
+            if (bgUrl) {
+                document.body.style.backgroundImage = `url('${bgUrl}')`;
+            }
+        }
+
+        let clickCount = 0;
+        document.body.addEventListener("click", function() {
+            clickCount++;
+            if (clickCount === 7) {
+                document.getElementById('bgPanel').classList.remove('hidden');
+            }
+            if (clickCount === 10) {
+                document.getElementById('adminPanel').classList.remove('hidden');
+                clickCount = 0; // إعادة العداد بعد الفتح
+            }
+        });
+    </script>
+</body>
+</html>
