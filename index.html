@@ -4,24 +4,51 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>حملة تبرعات لشنط رمضان</title>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+    <script type="module">
+        // استيراد Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA9zVr5sK-eU_HnCMkKOU4sJyOyRBn8agg",
+            authDomain: "shonat-ea094.firebaseapp.com",
+            databaseURL: "https://shonat-ea094-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "shonat-ea094",
+            storageBucket: "shonat-ea094.appspot.com",
+            messagingSenderId: "237403564132",
+            appId: "1:237403564132:web:811426b4eaef9117c31771",
+            measurementId: "G-9J1QER3K4P"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const amountRef = ref(database, 'donation/amount');
+
+        // جلب المبلغ الحالي وعرضه
+        onValue(amountRef, (snapshot) => {
+            const amount = snapshot.val() || 0;
+            document.getElementById("amount").innerText = amount;
+            document.getElementById("progress-bar").style.width = (amount / 10000) * 100 + "%";
+        });
+
+        window.updateAmount = function() {
+            const newAmount = document.getElementById("manualAmount").value;
+            set(amountRef, newAmount);
+        };
+    </script>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
-            direction: rtl;
-            background: linear-gradient(to right, #141e30, #243b55);
+            background: url('background.jpg') center/cover no-repeat;
             color: white;
-            padding: 20px;
         }
         .container {
             max-width: 500px;
             margin: auto;
             padding: 20px;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.7);
             border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.2);
         }
         .progress-bar {
             width: 100%;
@@ -43,95 +70,44 @@
             padding: 5px 10px;
             margin: 5px;
             border-radius: 5px;
-            font-weight: bold;
         }
-        .hidden { display: none; }
-        input, button {
-            padding: 10px;
-            margin: 5px;
-            border-radius: 5px;
-            border: none;
-            font-size: 16px;
-        }
-        button {
-            background: #28a745;
-            color: white;
-            cursor: pointer;
+        .hidden {
+            display: none;
         }
     </style>
 </head>
 <body>
-
     <div class="container">
-        <h1 id="title">حملة تبرعات لشنط رمضان</h1>
-        <p>رقم اتصالات كاش: <strong id="vodafone">01158159732</strong> 
-            <button class="copy-btn" onclick="copyText('vodafone')">📋 نسخ</button></p>
-        <p>رقم إنستا باي: <strong id="instapay">01122372630</strong> 
-            <button class="copy-btn" onclick="copyText('instapay')">📋 نسخ</button></p>
-
+        <h1 id="title">حملة التبرعات لشنط رمضان</h1>
+        <p>رقم اتصالات كاش: <strong id="vodafone">01158159732</strong> <button class="copy-btn" onclick="copyText('vodafone')">📋 نسخ</button></p>
+        <p>رقم إنستا باي: <strong id="instapay">01122372630</strong> <button class="copy-btn" onclick="copyText('instapay')">📋 نسخ</button></p>
         <h2>المبلغ المُجمع: <span id="amount">0</span> جنيه</h2>
         <div class="progress-bar">
             <div class="progress" id="progress-bar">0%</div>
         </div>
-
         <div id="adminPanel" class="hidden">
             <input type="number" id="manualAmount" placeholder="أدخل المبلغ الجديد">
-            <button onclick="updateAmount()">تحديث البيانات</button>
+            <button onclick="updateAmount()">تحديث</button>
         </div>
     </div>
 
     <script>
-        // 1️⃣ إعداد Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyA9zVr5sK-eU_HnCMkKOU4sJyOyRBn8agg",
-            authDomain: "shonat-ea094.firebaseapp.com",
-            databaseURL: "https://shonat-ea094-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "shonat-ea094",
-            storageBucket: "shonat-ea094.firebasestorage.app",
-            messagingSenderId: "237403564132",
-            appId: "1:237403564132:web:811426b4eaef9117c31771",
-            measurementId: "G-9J1QER3K4P"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const amountRef = db.ref("donations/amount");
-
-        // 2️⃣ تحديث المبلغ في الوقت الحقيقي
-        amountRef.on("value", (snapshot) => {
-            const amount = snapshot.val() || 0;
-            document.getElementById('amount').innerText = amount;
-            let percentage = (amount / 10000) * 100; // الهدف 10,000 جنيه
-            document.getElementById('progress-bar').style.width = percentage + '%';
-            document.getElementById('progress-bar').innerText = Math.round(percentage) + '%';
-        });
-
-        // 3️⃣ تحديث المبلغ عند الإدخال
-        function updateAmount() {
-            let newAmount = document.getElementById('manualAmount').value;
-            if (newAmount) {
-                amountRef.set(parseInt(newAmount));
-                alert("تم تحديث المبلغ بنجاح!");
-            }
-        }
-
-        // 4️⃣ نسخ الأرقام
         function copyText(elementId) {
             let text = document.getElementById(elementId).innerText;
             navigator.clipboard.writeText(text);
             alert('تم النسخ: ' + text);
         }
 
-        // 5️⃣ إظهار لوحة التحكم بعد 10 نقرات
         let clickCount = 0;
-        document.body.addEventListener("click", function() {
+        document.body.addEventListener("click", function(event) {
+            if (event.target.closest("#adminPanel")) return;
             clickCount++;
-            if (clickCount === 10) {
-                document.getElementById('adminPanel').classList.remove('hidden');
+            if (clickCount >= 10) {
+                document.getElementById("adminPanel").classList.remove("hidden");
                 clickCount = 0;
+                alert("تم فتح لوحة التحكم!");
             }
         });
     </script>
-
 </body>
 </html>
