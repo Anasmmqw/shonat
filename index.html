@@ -4,44 +4,86 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>حملة تبرعات لشنط رمضان</title>
+    <script type="module">
+        // استيراد Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+
+        // إعداد Firebase بمفتاحك الجديد (استبدل القيم الصحيحة)
+        const firebaseConfig = {
+            apiKey: "YOUR_NEW_API_KEY",
+            authDomain: "YOUR_NEW_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_NEW_PROJECT_ID-default-rtdb.firebaseio.com",
+            projectId: "YOUR_NEW_PROJECT_ID",
+            storageBucket: "YOUR_NEW_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_NEW_SENDER_ID",
+            appId: "YOUR_NEW_APP_ID"
+        };
+
+        // تهيئة Firebase وقاعدة البيانات
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        function copyText(elementId) {
+            let text = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(text);
+            alert('تم النسخ: ' + text);
+        }
+
+        // تحديث المبلغ في قاعدة البيانات
+        function updateAmountInDatabase(amount) {
+            set(ref(database, "donation/amount"), amount);
+        }
+
+        // تحديث الخلفية في قاعدة البيانات
+        function updateBackgroundInDatabase(bgUrl) {
+            set(ref(database, "donation/background"), bgUrl);
+        }
+
+        // جلب المبلغ من قاعدة البيانات
+        function fetchAmountFromDatabase() {
+            const amountRef = ref(database, "donation/amount");
+            onValue(amountRef, (snapshot) => {
+                const amount = snapshot.val() || 0;
+                document.getElementById("amount").innerText = amount;
+                let percentage = (amount / 10000) * 100;
+                document.getElementById("progress-bar").style.width = percentage + "%";
+                document.getElementById("progress-bar").innerText = Math.round(percentage) + "%";
+            });
+        }
+
+        // جلب الخلفية من قاعدة البيانات
+        function fetchBackgroundFromDatabase() {
+            const bgRef = ref(database, "donation/background");
+            onValue(bgRef, (snapshot) => {
+                const bgUrl = snapshot.val();
+                if (bgUrl) {
+                    document.body.style.backgroundImage = `url('${bgUrl}')`;
+                }
+            });
+        }
+
+        // تحميل البيانات عند فتح الموقع
+        fetchAmountFromDatabase();
+        fetchBackgroundFromDatabase();
+
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById("updateAmountBtn").addEventListener("click", function() {
+                const newAmount = document.getElementById("manualAmount").value;
+                updateAmountInDatabase(newAmount);
+            });
+
+            document.getElementById("updateBgBtn").addEventListener("click", function() {
+                const newBgUrl = document.getElementById("bgUrl").value;
+                updateBackgroundInDatabase(newBgUrl);
+            });
+        });
+    </script>
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            text-align: center; 
-            direction: rtl; 
-            background-image: url('background.jpg'); 
-            background-size: cover;
-            background-position: center;
-            color: white;
-        }
-        .container { 
-            max-width: 500px; 
-            margin: auto; 
-            padding: 20px; 
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 10px; 
-        }
-        .progress-bar { 
-            width: 100%; 
-            background: #ddd; 
-            border-radius: 20px; 
-            overflow: hidden; 
-        }
-        .progress { 
-            height: 30px; 
-            background: green; 
-            width: 0%; 
-            color: white; 
-            line-height: 30px; 
-        }
-        .copy-btn {
-            cursor: pointer;
-            background: #ffcc00;
-            border: none;
-            padding: 5px 10px;
-            margin: 5px;
-            border-radius: 5px;
-        }
+        body { text-align: center; direction: rtl; background-size: cover; background-position: center; color: white; }
+        .container { max-width: 500px; margin: auto; padding: 20px; background: rgba(0, 0, 0, 0.7); border-radius: 10px; }
+        .progress-bar { width: 100%; background: #ddd; border-radius: 20px; overflow: hidden; }
+        .progress { height: 30px; background: green; width: 0%; color: white; line-height: 30px; }
         .hidden { display: none; }
     </style>
 </head>
@@ -52,89 +94,26 @@
             <button class="copy-btn" onclick="copyText('vodafone')">📋 نسخ</button></p>
         <p>رقم إنستا باي: <strong id="instapay">01122372630</strong> 
             <button class="copy-btn" onclick="copyText('instapay')">📋 نسخ</button></p>
-        <h2>المبلغ المُجمع: <span id="amount">0</span> جنيه</h2>
+        <p>المبلغ المُجمع: <span id="amount">0</span> جنيه</p>
         <div class="progress-bar">
             <div class="progress" id="progress-bar">0%</div>
         </div>
-        
-        <!-- قسم تحديث المبلغ -->
         <div id="adminPanel" class="hidden">
             <input type="number" id="manualAmount" placeholder="أدخل المبلغ الجديد">
-            <button onclick="updateAmount()">تحديث البيانات</button>
+            <button id="updateAmountBtn">تحديث البيانات</button>
         </div>
-
-        <!-- قسم تغيير الخلفية -->
         <div id="bgPanel" class="hidden">
             <input type="text" id="bgUrl" placeholder="أدخل رابط الصورة">
-            <button onclick="updateBackground()">تحديث الخلفية</button>
+            <button id="updateBgBtn">تحديث الخلفية</button>
         </div>
     </div>
-
     <script>
-        // تحميل البيانات المحفوظة عند فتح الصفحة
-        window.onload = function () {
-            let savedAmount = localStorage.getItem("savedAmount");
-            if (savedAmount !== null) {
-                document.getElementById("amount").innerText = savedAmount;
-                updateProgressBar(savedAmount);
-            }
-
-            let savedBg = localStorage.getItem("savedBg");
-            if (savedBg !== null) {
-                document.body.style.backgroundImage = `url('${savedBg}')`;
-            }
-        };
-
-        // نسخ رقم التحويل
-        function copyText(elementId) {
-            let text = document.getElementById(elementId).innerText;
-            navigator.clipboard.writeText(text);
-            alert('تم النسخ: ' + text);
-        }
-
-        // تحديث المبلغ وحفظه في LocalStorage
-        function updateAmount() {
-            let amount = document.getElementById('manualAmount').value;
-            if (amount.trim() !== "") {
-                document.getElementById('amount').innerText = amount;
-                localStorage.setItem("savedAmount", amount);
-                updateProgressBar(amount);
-            }
-        }
-
-        // تحديث شريط التقدم بناءً على المبلغ
-        function updateProgressBar(amount) {
-            let percentage = (amount / 10000) * 100; // استبدل 10000 بالهدف الكلي
-            document.getElementById('progress-bar').style.width = percentage + '%';
-            document.getElementById('progress-bar').innerText = Math.round(percentage) + '%';
-        }
-
-        // تحديث الخلفية وحفظ الرابط في LocalStorage
-        function updateBackground() {
-            let bgUrl = document.getElementById('bgUrl').value;
-            if (bgUrl) {
-                document.body.style.backgroundImage = `url('${bgUrl}')`;
-                localStorage.setItem("savedBg", bgUrl);
-            }
-        }
-
-        // إظهار تحديث المبلغ بعد الضغط 10 مرات
-        let amountClickCount = 0;
+        let clickCount = 0;
         document.body.addEventListener("click", function() {
-            amountClickCount++;
-            if (amountClickCount === 10) {
+            clickCount++;
+            if (clickCount === 10) {
                 document.getElementById('adminPanel').classList.remove('hidden');
-                amountClickCount = 0;
-            }
-        });
-
-        // إظهار تغيير الخلفية بعد الضغط 7 مرات
-        let bgClickCount = 0;
-        document.body.addEventListener("click", function() {
-            bgClickCount++;
-            if (bgClickCount === 7) {
-                document.getElementById('bgPanel').classList.remove('hidden');
-                bgClickCount = 0;
+                clickCount = 0;
             }
         });
     </script>
